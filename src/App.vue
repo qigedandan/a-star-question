@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref } from 'vue';
 import { ElMessage } from 'element-plus'
 
 let mapOpen = [];
@@ -30,10 +30,17 @@ class mapNode {
   constructor(status, lastStep, step, father) {
     this.status = status;
     this.step = step; //类中变量
-    this.fn =
+    // 曼哈顿距离
+    if(mhd.value){
+      this.fn =
       step +
       Math.abs(status[0] - goal[0]) +
       Math.abs(status[1] - goal[1]);
+    }else{
+          // 下面是欧几里得距离
+      this.fn =
+      step + Math.sqrt((status[0] - goal[0]) * (status[0] - goal[0]) + (status[1] - goal[1]) * (status[1] - goal[1]))
+    }
     this.lastStep = lastStep;
     this.father = father;
   }
@@ -99,7 +106,7 @@ function migong() {
     if (n.status[0] == goal[0] && n.status[1] == goal[1]) {
       // TODO: 找到路线
       let line = n.father.concat([n.status])
-      ElMessage.success(`找到路线啦，共走了${line.length-1}步`)
+      ElMessage.success(`找到路线啦，共走了${line.length - 1}步`)
       line.forEach((element, index) => {
         maze.value[element[0]][element[1]] = 3
       }
@@ -147,15 +154,15 @@ function main() {
       return element == 1 ? 1 : 0
     })
   })
-  if(startNode[0]<0||startNode[0]>=row.value||startNode[1]<0||startNode[1]>=col.value){
+  if (startNode[0] < 0 || startNode[0] >= row.value || startNode[1] < 0 || startNode[1] >= col.value) {
     ElMessage.error('开始坐标超出范围')
     return
   }
-  if(goal[0]<0||goal[0]>=row.value||goal[1]<0||goal[1]>=col.value){
+  if (goal[0] < 0 || goal[0] >= row.value || goal[1] < 0 || goal[1] >= col.value) {
     ElMessage.error('目的坐标超出范围')
     return
   }
-  if(maze.value[startNode[0]][startNode[1]]==1){
+  if (maze.value[startNode[0]][startNode[1]] == 1) {
     ElMessage.info('此迷宫无解')
     return
   }
@@ -180,6 +187,8 @@ function goalChange() {
   })
   console.log(goal);
 }
+const mhd = ref(true)
+
 </script>
 
 <template>
@@ -187,25 +196,28 @@ function goalChange() {
     <div class="role">
       <h2 style="margin-right: 0px;">操作方法</h2>
       <div style="text-align:justify;">
-        1.设置好迷宫行数和迷宫列数<br/>
-        2.点击重置迷宫或者空白处<br/>
-        3.点击迷宫方格，将有障碍的地方设置为灰色，表示不可通过<br/>
-        4.设置好开始坐标和目的坐标<br/>
-        5.点击开始寻路按钮<br/>
-        6.寻路完成后会有消息提示并将路线显示在迷宫中<br/>
+        1.设置好迷宫行数和迷宫列数<br />
+        2.点击重置迷宫或者空白处<br />
+        3.点击迷宫方格，将有障碍的地方设置为灰色，表示不可通过<br />
+        4.设置好开始坐标和目的坐标<br />
+        5.点击开始寻路按钮<br />
+        6.寻路完成后会有消息提示并将路线显示在迷宫中<br />
 
       </div>
-
+      <el-form-item label="评估函数" style="margin-top:5px">
+        <el-switch v-model="mhd"     style="--el-switch-on-color: #67c23a;"
+ active-text="曼哈顿" inactive-text="欧几里得" />
+      </el-form-item>
     </div>
     <div class="left">
       <h2>迷宫设置</h2>
       <el-form label-width="120px">
         <el-form-item label="迷宫行数">
-          <el-input-number v-model="row" @change="mazeChange">
+          <el-input-number v-model="row" min="0" @change="mazeChange">
           </el-input-number>
         </el-form-item>
         <el-form-item label="迷宫列数">
-          <el-input-number v-model="col" @change="mazeChange">
+          <el-input-number v-model="col" min="0" @change="mazeChange">
           </el-input-number>
         </el-form-item>
         <el-form-item label="开始坐标">
@@ -218,6 +230,7 @@ function goalChange() {
           <el-input v-model="goalRef" placeholder="Please input" @change="goalChange">
           </el-input>
         </el-form-item>
+
         <el-button type="success" @click="main">开始寻路</el-button>
         <el-button type="warning" @click="reset">重置迷宫</el-button>
       </el-form>
@@ -227,8 +240,8 @@ function goalChange() {
     <div class="maze">
       <h2>迷宫</h2>
       <div class="row" v-for="(item, index) in maze">
-        <div class="block" :class="{ chose: items == 1, unchose: items == 0, line: items == 3 }" v-for="(items, indexs) in item"
-          @click="blockChange(index, indexs)">
+        <div class="block" :class="{ chose: items == 1, unchose: items == 0, line: items == 3 }"
+          v-for="(items, indexs) in item" @click="blockChange(index, indexs)">
           {{ items }}
         </div>
       </div>
